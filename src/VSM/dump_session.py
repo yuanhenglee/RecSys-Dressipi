@@ -1,6 +1,5 @@
 # dump session 
-# 1. session:  
-# 2. item: 
+# format: { session_id: [(item_id, date)], ... }
 
 import argparse
 import pickle
@@ -18,14 +17,10 @@ def main():
                         help='pickle path',
                         default='dataset/train_sessions.pickle'
                         )
-    # parser.add_argument("--session", action = "store_true")
-    # parser.add_argument("--item", action = "store_true")
     args = parser.parse_args()
     try:
         session_path = args.session_path
         pickle_path = args.pickle_path
-        # use_item = args.item
-        # use_session= args.session
     except:
         raise "USAGE: python3 dump_session.py --session_path ..."
 
