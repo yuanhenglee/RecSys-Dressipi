@@ -1,7 +1,8 @@
-from pprint import pprint
-from Parser import Parser
-import util
 import numpy as np
+
+def tokenize( s ):
+    tokens = list(filter(None, s.split(' ')))
+    return tokens
 
 class VectorSpace:
     """ A algebraic model for representing text documents as vectors of identifiers. 
@@ -15,36 +16,36 @@ class VectorSpace:
     #Mapping of vector index to keyword
     vectorKeywordIndex=[]
 
-    #Tidies terms
-    parser=None
 
-
-    def __init__(self, documents=[], tf_only=False, chinese=False):
+    def __init__(self, documents={}):
+        item_ids = documents.keys()
+        
         self.documents = documents
-        self.doc_size = len(self.documents)
+        self.doc_size = len(item_ids)
         self.documentVectorsTF=[]
-        self.parser = Parser()
-        self.chinese = chinese
-
-        # set stopwords source
-        self.stopwords = set()
 
         
         """ Create the vector space for the passed document strings """
-        self.doc_word_list = [self.str2words(doc) for doc in documents]
-        self.vectorKeywordIndex = self.getVectorKeywordIndex(documents)
-        self.documentVectorsTF = [self.makeTFVector(document) for document in documents]
+        self.doc_word_list = {}
+        for item_id in item_ids:
+            self.doc_word_list[item_id] = tokenize(documents[item_id])
+        self.vectorKeywordIndex = self.getVectorKeywordIndex()
 
-        if not tf_only:
-            self.makeIDF()
-            self.documentVectorsTFIDF = [tf_v * self.idf_v for tf_v in self.documentVectorsTF]
+        self.documentVectorsTF = {}
+        for item_id in item_ids:
+            self.documentVectorsTF[item_id] = self.makeTFVector(self.doc_word_list[item_id])
+
+        self.makeIDF()
+        self.documentVectorsTFIDF = {}
+        for item_id in item_ids:
+            self.documentVectorsTFIDF[item_id] = self.documentVectorsTF[item_id] * self.idf_v
 
     # construct idf vector
     def makeIDF(self):
         # count how many doc contain word
         def n_containing(word):
             result = 0
-            for word_list in self.doc_word_list:
+            for word_list in self.doc_word_list.values():
                 if word in word_list:
                     result += 1
             return result
@@ -58,15 +59,15 @@ class VectorSpace:
         self.idf_v = idf_v
 
 
-    def getVectorKeywordIndex(self, documentList):
+    def getVectorKeywordIndex(self):
         """ create the keyword associated to the position of the elements within the document vectors """
 
         # combine doc_word_list into list of words for the whole corpus
         vocabularyList = []
-        for word_list in self.doc_word_list:
-            vocabularyList += word_list
+        for word_list in self.doc_word_list.values():
+            vocabularyList.extend(word_list)
 
-        self.uniqueVocabularyList = util.removeDuplicates(vocabularyList)
+        self.uniqueVocabularyList = list(set(vocabularyList))
         self.word_size = len(self.uniqueVocabularyList)
         vectorIndex={}
         offset=0
@@ -78,13 +79,11 @@ class VectorSpace:
 
 
     # construct tf vector based on document string
-    def makeTFVector(self, wordString ):
+    def makeTFVector(self, wordList ):
         """ @pre: unique(vectorIndex) """
 
         #Initialise vector with 0's
         vector = np.zeros(self.word_size)
-
-        wordList = self.str2words(wordString)
         
         for word in wordList:
             index = self.vectorKeywordIndex.get(word, -1)
@@ -92,70 +91,3 @@ class VectorSpace:
                 vector[index] += 1; #Use simple Term Count Model
         vector = vector / len(wordList)
         return vector
-
-    def buildQueryVector(self, termList):
-        """ convert query string into a term vector """
-        query = self.makeTFVector(" ".join(termList))
-        return query
-
-
-    def related(self,documentId):
-        """ find documents that are related to the document indexed by passed Id within the document Vectors"""
-        ratings = [util.cosine(self.documentVectorsTF[documentId], documentVector) for documentVector in self.documentVectorsTF]
-        #ratings.sort(reverse=True)
-        return ratings
-
-
-    def search(self,searchList, method = 1, feedback = False):
-        """ search for documents that match based on a list of terms """
-        queryVector = self.buildQueryVector(searchList)
-
-        # use different vectors and metrics for different methods
-        if method == 1:
-            vectors = self.documentVectorsTF
-            similarity_func = util.cosine
-        elif method == 2:
-            vectors = self.documentVectorsTF
-            similarity_func = util.euclidean
-        elif method == 3:
-            vectors = self.documentVectorsTFIDF
-            similarity_func = util.cosine
-        elif method == 4:
-            vectors = self.documentVectorsTFIDF
-            similarity_func = util.euclidean
-
-        # get rating for each doc
-        ratings = [similarity_func(queryVector, documentVector) for documentVector in vectors]
-
-        # pseudo feedback
-        if feedback:
-            # find best result in previous method
-            best_result_str = self.documents[np.argmax(ratings)]
-
-            best_result_words = self.str2words(best_result_str)
-            best_result_words = util.filterNnV(best_result_words)
-            
-            combineQueryVector = queryVector + 0.5 * self.buildQueryVector(best_result_words)
-            ratings = [similarity_func(combineQueryVector, documentVector) for documentVector in vectors]
-
-        #ratings.sort(reverse=True)
-        return ratings
-    
-    # convert string into a list of processed words
-    def str2words(self, doc_str, pos = False):
-        # temp fix
-        words = doc_str.split(') (')
-        for i in range(len(words)):
-            if words[i].startswith('('):
-                words[i] = words[i][1:]
-            if words[i].endswith(')'):
-                words[i] = words[i][:-1]
-        # print(words)
-        return words 
-
-    # print out idf vector of the query. for test only.
-    def print_query_idf( self, query_list):
-        query_list = self.str2words(' '.join(query_list))
-        for word in query_list:
-            index = self.vectorKeywordIndex.get(word, -1)
-            print(word, self.idf_v[index] )
