@@ -12,9 +12,9 @@ def main():
                         help='purchase path',
                         default='dataset/train_purchases.csv'
                         )
-    parser.add_argument("--pickle_path",
+    parser.add_argument("--output_path",
                         nargs='?',
-                        help='pickle path',
+                        help='output pickle path',
                         default='dataset/train_purchases.pickle'
                         )
     # parser.add_argument("--session", action = "store_true")
