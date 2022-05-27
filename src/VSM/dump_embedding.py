@@ -7,11 +7,6 @@ import os
 import time
 from VectorSpace import VectorSpace
 
-def vectorize( doc ):
-    tokens = list(filter(None, doc.split(' ')))
-    print(tokens)
-
-
 def main():
     # args
     parser = argparse.ArgumentParser()
@@ -37,7 +32,6 @@ def main():
             # print(item_id, f_path)
             with open(f_path, 'r') as f:
                 item_docs[item_id] = f.read()
-                # item_vectors[item_id] = vectorize(f.read())
     
     # construct vector space
     start_time = time.time()
