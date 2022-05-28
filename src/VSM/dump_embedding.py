@@ -41,9 +41,9 @@ def main():
 
     result = vectorSpace.documentVectorsTFIDF
 
-    pickle_path = 'dataset/feature_vector_space.pickle'
+    output_path = 'dataset/feature_vector_space.pickle'
 
-    with open(pickle_path, 'wb') as f:
+    with open(output_path, 'wb') as f:
         pickle.dump(result, f)
 
 if __name__ == "__main__":

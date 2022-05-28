@@ -22,7 +22,7 @@ def main():
     args = parser.parse_args()
     try:
         purchase_path = args.purchase_path
-        pickle_path = args.pickle_path
+        output_path = args.output_path
         # use_item = args.item
         # use_session= args.session
     except:
@@ -40,7 +40,7 @@ def main():
 
     # print(purchase_dict)
 
-    with open(pickle_path, 'wb') as f:
+    with open(output_path, 'wb') as f:
         pickle.dump(purchase_dict, f)
  #
 if __name__ == "__main__":
