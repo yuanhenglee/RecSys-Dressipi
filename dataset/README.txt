@@ -1,3 +1,11 @@
+## splitTrainSessions.py ##
+It can split train_sessions.csv according to your specific time, and generate the data you want.
+Example: python3 splitTrainSessions.py -y 2021 -d 03
+         data will be stored in 2021-03.csv
+
+Example: python3 splitTrainSessions.py -d 09
+         data will be stored in 09.csv
+
 This is the dataset for the Dressipi RecSys Challenge 2022.
 
 train_purchases.csv
