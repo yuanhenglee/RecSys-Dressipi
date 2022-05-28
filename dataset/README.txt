@@ -32,3 +32,10 @@ test_final_sessions.csv
 columns: session_id, item_id, date
 The input sessions for prediction for determining the final winners.
 
+clustering_allltems_file.csv
+columns: catogoryTotalCount, catogory, catogoryMemberItem
+All catogories with its items.
+
+clustering_candidate_file.csv
+columns: catogoryTotalCount, catogory, catogoryMemberItem
+All catogories with its candidate items.
