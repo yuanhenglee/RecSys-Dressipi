@@ -1,7 +1,5 @@
 .DS_Store
 prediction.csv
 *.pyc
-train_sessions.csv
-item_features.csv
 __pycache__
 *.pickle
