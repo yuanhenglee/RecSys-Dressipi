@@ -39,7 +39,7 @@ def main():
                 else:
                     session_dict[session_id] = [(item_id, date)]
 
-    # print(session_dict)
+    print(session_dict)
 
     with open(output_path, 'wb') as f:
         pickle.dump(session_dict, f)

@@ -11,6 +11,8 @@ import pickle
 import pandas as pd
 import numpy as np
 import sys
+import gc
+gc.enable()
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -61,7 +63,7 @@ parser.add_argument("--vector_path",
 parser.add_argument("--output_path",
                     nargs='?',
                     help='pickle path',
-                    default='dataset/train_sessions.pickle'
+                    default='dataset/train_sessions'
                     )
 parser.add_argument("--with_purchase", action="store_true")
 parser.add_argument("--by_session", action="store_true")
@@ -91,24 +93,31 @@ try:
 except:
     raise "Fail to load pickles."
 
-# construct df
-feature_val = []
-# i = 0
-for session_id, item_list in session_dict.items():
-    if by_session:
-        if with_purchase:
-            print(purchase_dict[session_id])
-            feature_val.append(combine_items_features( item_list, purchase_dict[session_id][0] ))
-        else:
-            feature_val.append(combine_items_features( item_list ))
+# print(len(session_dict))
+# # construct df
+offset = 5000
+print(len(session_dict))
+# for start in range(0, len(session_dict), offset):
+for start in range(0, 5001, offset):
+    end = start + offset
+    print("Construct session: ", start, end)
 
-        # i+=1
-        # if i >10:
-        #     break
+    feature_val = []
+    # for session_id, item_list in session_dict.items():
+    for session_id in list(session_dict.keys())[start:end]:
+        item_list = session_dict[session_id]
+        if by_session:
+            if with_purchase:
+                print(purchase_dict[session_id])
+                feature_val.append(combine_items_features( item_list, purchase_dict[session_id][0] ))
+            else:
+                feature_val.append(combine_items_features( item_list ))
 
-feature_val = np.vstack(feature_val)
-print(feature_val)
+    feature_val = np.vstack(feature_val)
+    # print(feature_val)
 
+    with open(output_path+str(start) + '-' + str(end) +'.pickle', 'wb') as f:
+        pickle.dump(feature_val, f)
 
-with open(output_path, 'wb') as f:
-    pickle.dump(feature_val, f)
+    del feature_val
+    gc.collect()
