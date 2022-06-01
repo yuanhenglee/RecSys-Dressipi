@@ -4,3 +4,4 @@ prediction.csv
 __pycache__
 *.pickle
 dataset/train_features/*
+dataset/test_features/*
