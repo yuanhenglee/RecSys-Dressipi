@@ -3,3 +3,8 @@ prediction.csv
 *.pyc
 __pycache__
 *.pickle
+<<<<<<< HEAD
+=======
+dataset/train_features/*
+dataset/test_features/*
+>>>>>>> 206c192b639b75a4fef69515d025da1b8afa10da
