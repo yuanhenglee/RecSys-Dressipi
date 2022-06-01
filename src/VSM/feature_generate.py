@@ -16,11 +16,10 @@ import csv
 import time
 from tqdm import tqdm
 import gc
+from datetime import datetime
 gc.enable()
 
 np.set_printoptions(threshold=sys.maxsize)
-
-n_features = 1
 
 def cosine_similarity( v1, v2 ):
     return np.dot(v1, v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))
@@ -31,25 +30,33 @@ def euclidean_similarity( v1, v2 ):
 def inner_similarity( v1, v2 ):
     return np.dot(v1, v2)
 
+def sec2July( date1 ):
+    d1 = datetime.strptime( date1[:19], "%Y-%m-%d %H:%M:%S")    
+    d2 = datetime.strptime( "2021-07-31 12:00:00", "%Y-%m-%d %H:%M:%S")
+    return (d2 - d1).total_seconds()
 
-def build_features( item_vector ):
+def build_features( item_vector, sec ):
     # for each candidate_item
     features_list = []
     for i in range(N):
         candidate_vector = vector_space[candidate_items[i]]
         features = []
         features.append(inner_similarity( item_vector, candidate_vector ))
+        features.append(sec)
+
         features_list.append(features)
     # print(feature_val)
     return features_list 
 
 
 def combine_items_features( item_list ):
-    vectors = [ vector_space[item_id] for item_id, date in item_list ]
+    vector_list = [ vector_space[item_id] for item_id, date in item_list ]
+    sec_list = [ sec2July(date) for item_id, date in item_list ]
 
     # simply sum up the vectors
-    combined_vector = np.sum( vectors , axis=0 )
-    return build_features( combined_vector )
+    combined_vector = np.sum( vector_list , axis=0 )
+    combined_sec = round(np.mean( sec_list ))
+    return build_features( combined_vector, combined_sec )
 
 # args
 parser = argparse.ArgumentParser()
@@ -101,16 +108,12 @@ try:
 except:
     raise "Fail to load pickles."
 
-if os.path.isfile( output_path ):
-    print( output_path, "already exist, old file will replaced!!")
-    os.remove( output_path )
-
 # construct df
 # for i, session_id in enumerate(list(session_dict.keys())[:100]):
 start = 0
-# end = 10000
+# end = 1000
 end = len(session_dict) 
-save_period = 1000
+save_period = 10000
 
 print( "Processing session", start , "to", end)
 start_time = time.time()
@@ -128,7 +131,7 @@ for i in tqdm(range(start, end)):
 
     features_lists.extend(features_list)
     if i%save_period == 0 or i == end-1:
-        with open( output_path, 'a') as f:
+        with open( output_path + '_' +str(i//save_period), 'w') as f:
             wr = csv.writer(f)
             wr.writerows(features_lists)
             del features_lists
