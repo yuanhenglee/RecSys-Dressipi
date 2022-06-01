@@ -33,7 +33,7 @@ def main():
             item_id = int(line.split(',')[1])
             date = line.split(',')[2].strip()
             # sample only data after 2021
-            if date.startswith("2021-04") or date.startswith("2021-05"):
+            if date.startswith("2021-05"):
                 if session_id in session_dict:
                     session_dict[session_id].append( (item_id, date) )
                 else:

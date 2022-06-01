@@ -1,6 +1,6 @@
 # generate df for training
 # format: 
-#   cos euc
+#   inner product 
 # 1 
 # 2
 # .
@@ -10,13 +10,17 @@ import argparse
 import pickle
 import pandas as pd
 import numpy as np
+import os
 import sys
+import csv
+import time
+from tqdm import tqdm
 import gc
 gc.enable()
 
 np.set_printoptions(threshold=sys.maxsize)
 
-n_features = 2
+n_features = 1
 
 def cosine_similarity( v1, v2 ):
     return np.dot(v1, v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))
@@ -24,24 +28,28 @@ def cosine_similarity( v1, v2 ):
 def euclidean_similarity( v1, v2 ):
     return np.linalg.norm(v1-v2)
 
-def build_features( item_id, purchase_item_id = 0 ):
-    item_vector = vector_space[item_id]
-    feature_val = np.zeros( shape = (N,n_features+1) )
+def inner_similarity( v1, v2 ):
+    return np.dot(v1, v2)
+
+
+def build_features( item_vector ):
+    # for each candidate_item
+    features_list = []
     for i in range(N):
         candidate_vector = vector_space[candidate_items[i]]
-        feature_val[i][0] = cosine_similarity( item_vector, candidate_vector )
-        feature_val[i][1] = euclidean_similarity( item_vector, candidate_vector )
-        feature_val[i][n_features] = 1 if candidate_items[i] == purchase_item_id else 0
+        features = []
+        features.append(inner_similarity( item_vector, candidate_vector ))
+        features_list.append(features)
     # print(feature_val)
-    return feature_val
+    return features_list 
 
 
-def combine_items_features( item_list, purchase_item_id = 0 ):
-    feature_val = np.zeros( shape= (N,n_features+1) )
-    for item_id, date in item_list:
-        feature_val += build_features( item_id, purchase_item_id )
-    return feature_val
+def combine_items_features( item_list ):
+    vectors = [ vector_space[item_id] for item_id, date in item_list ]
 
+    # simply sum up the vectors
+    combined_vector = np.sum( vectors , axis=0 )
+    return build_features( combined_vector )
 
 # args
 parser = argparse.ArgumentParser()
@@ -63,10 +71,10 @@ parser.add_argument("--vector_path",
 parser.add_argument("--output_path",
                     nargs='?',
                     help='pickle path',
-                    default='dataset/train_sessions'
+                    default='dataset/train_features/session_wp.csv'
                     )
 parser.add_argument("--with_purchase", action="store_true")
-parser.add_argument("--by_session", action="store_true")
+# parser.add_argument("--by_session", action="store_true")
 args = parser.parse_args()
 try:
     session_path = args.session_path
@@ -74,7 +82,7 @@ try:
     vector_path = args.vector_path
     output_path = args.output_path
     with_purchase = args.with_purchase
-    by_session = args.by_session
+    # by_session = args.by_session
 except:
     raise "USAGE: python3 dump_embedding.py --feature_path ..."
 
@@ -93,31 +101,38 @@ try:
 except:
     raise "Fail to load pickles."
 
-# print(len(session_dict))
-# # construct df
-offset = 5000
-print(len(session_dict))
-# for start in range(0, len(session_dict), offset):
-for start in range(0, 5001, offset):
-    end = start + offset
-    print("Construct session: ", start, end)
+if os.path.isfile( output_path ):
+    print( output_path, "already exist, old file will replaced!!")
+    os.remove( output_path )
 
-    feature_val = []
-    # for session_id, item_list in session_dict.items():
-    for session_id in list(session_dict.keys())[start:end]:
-        item_list = session_dict[session_id]
-        if by_session:
-            if with_purchase:
-                print(purchase_dict[session_id])
-                feature_val.append(combine_items_features( item_list, purchase_dict[session_id][0] ))
-            else:
-                feature_val.append(combine_items_features( item_list ))
+# construct df
+# for i, session_id in enumerate(list(session_dict.keys())[:100]):
+start = 0
+# end = 10000
+end = len(session_dict) 
+save_period = 1000
 
-    feature_val = np.vstack(feature_val)
-    # print(feature_val)
+print( "Processing session", start , "to", end)
+start_time = time.time()
 
-    with open(output_path+str(start) + '-' + str(end) +'.pickle', 'wb') as f:
-        pickle.dump(feature_val, f)
+features_lists = []
+for i in tqdm(range(start, end)):
+    session_id = list(session_dict.keys())[i]
+    item_list = session_dict[session_id]
+    features_list = combine_items_features( item_list )
 
-    del feature_val
-    gc.collect()
+    if with_purchase:
+        purchase_id, purchase_date = purchase_dict[session_id]
+        for j in range(N):
+            features_list[j].append(1 if purchase_id == candidate_items[j] else 0)
+
+    features_lists.extend(features_list)
+    if i%save_period == 0 or i == end-1:
+        with open( output_path, 'a') as f:
+            wr = csv.writer(f)
+            wr.writerows(features_lists)
+            del features_lists
+            gc.collect()
+            features_lists = []
+
+print("Done. Execution Time:", time.time() - start_time)
