@@ -55,6 +55,7 @@ def combine_items_features( item_list ):
 
     # simply sum up the vectors
     combined_vector = np.sum( vector_list , axis=0 )
+    # TODO weighted by order / by time diff
     combined_sec = round(np.mean( sec_list ))
     return build_features( combined_vector, combined_sec )
 
