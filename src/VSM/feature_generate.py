@@ -79,7 +79,7 @@ parser.add_argument("--vector_path",
 parser.add_argument("--output_path",
                     nargs='?',
                     help='pickle path',
-                    default='dataset/train_features/session_wp.csv'
+                    default='dataset/train_features/train'
                     )
 parser.add_argument("--with_purchase", action="store_true")
 # parser.add_argument("--by_session", action="store_true")
@@ -125,18 +125,25 @@ for i in tqdm(range(start, end)):
     item_list = session_dict[session_id]
     features_list = combine_items_features( item_list )
 
+    # training data with purchase
     if with_purchase:
         purchase_id, purchase_date = purchase_dict[session_id]
         for j in range(N):
             features_list[j].append(1 if purchase_id == candidate_items[j] else 0)
 
-    features_lists.extend(features_list)
-    if i%save_period == 0 or i == end-1:
-        with open( output_path + '_' +str(i//save_period), 'w') as f:
+        features_lists.extend(features_list)
+        if i%save_period == 0 or i == end-1:
+            with open( output_path + '_' +str(i//save_period), 'w') as f:
+                wr = csv.writer(f)
+                wr.writerows(features_lists)
+                del features_lists
+                gc.collect()
+                features_lists = []
+    # testing data without purchase
+    else:
+       with open( output_path + '_' + str(session_id), 'w') as f:
             wr = csv.writer(f)
-            wr.writerows(features_lists)
-            del features_lists
-            gc.collect()
-            features_lists = []
+            wr.writerows(features_list)
+
 
 print("Done. Execution Time:", time.time() - start_time)
