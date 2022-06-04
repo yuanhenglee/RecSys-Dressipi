@@ -41,6 +41,8 @@ def build_features( item_vector, sec ):
     for i in range(N):
         candidate_vector = vector_space[candidate_items[i]]
         features = []
+        # item_id label, for easier sampling later
+        features.append( candidate_items[i] )
         features.append(inner_similarity( item_vector, candidate_vector ))
         features.append(sec)
 
@@ -54,7 +56,7 @@ def combine_items_features( item_list ):
     sec_list = [ sec2July(date) for item_id, date in item_list ]
 
     # simply sum up the vectors
-    combined_vector = np.means( vector_list , axis=0 )
+    combined_vector = np.mean( vector_list , axis=0 )
     # TODO weighted by order / by time diff
     combined_sec = round(np.mean( sec_list ))
     return build_features( combined_vector, combined_sec )
@@ -135,6 +137,7 @@ for i in tqdm(range(start, end)):
         if i%save_period == 0 or i == end-1:
             with open( output_path + '_' +str(i//save_period), 'w') as f:
                 wr = csv.writer(f)
+                wr.writerows(['candidate_item_id', 'inner_similarity', 'sec_diff', 'purchased'])
                 wr.writerows(features_lists)
                 del features_lists
                 gc.collect()
@@ -143,6 +146,7 @@ for i in tqdm(range(start, end)):
     else:
        with open( output_path + '_' + str(session_id), 'w') as f:
             wr = csv.writer(f)
+            wr.writerows(['candidate_item_id', 'inner_similarity', 'sec_diff'])
             wr.writerows(features_list)
 
 
