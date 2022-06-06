@@ -1,37 +1,30 @@
 import math
 import random
 import pandas as pd
+import pickle
 from collections import defaultdict
 from operator import itemgetter
-
-# def LoadMovieLensData(filepath, train_rate):
-#     ratings = pd.read_table(filepath, sep="::", header=None, names=["UserID", "MovieID", "Rating", "TimeStamp"],\
-#                             engine='python')
-#     ratings = ratings[['UserID','MovieID']]
-
-#     train = []
-#     test = []
-#     random.seed(3)
-#     for idx, row in ratings.iterrows():
-#         user = int(row['UserID'])
-#         item = int(row['MovieID'])
-#         if random.random() < train_rate:
-#             train.append([user, item])
-#         else:
-#             test.append([user, item])
-#     return PreProcessData(train), PreProcessData(test)
 
 def LoadData(filepath):
     with open(filepath) as f:
         lines = f.readlines()
         return PreProcessData(lines)
 
+def CreateCandidate(filepath):
+    with open(filepath) as f:
+        lines = f.readlines()
+        candidate = set()
+        for i in range(1, len(lines)):
+            line = lines[i]
+            candidate.add(int(line))
+
+        return candidate
+
 def PreProcessData(originData):
     """
-    建立User-Item表，结构如下：
-        {"User1": {MovieID1, MoveID2, MoveID3,...}
-         "User2": {MovieID12, MoveID5, MoveID8,...}
-         ...
+    建立Session-Item表，結構如下：
+        {"Session1": [ ItemID1, ItemID2, ItemID3,... ]
+         "Session2": [ ItemID5, ItemID6, ItemID7,... ]
         }
     """
     trainData = dict()
@@ -42,16 +35,12 @@ def PreProcessData(originData):
         if( session_id == originData[i-1].split(',')[0]):
             session_id = int(session_id)
             item_id = int(item_id)
-            trainData[session_id].add(item_id)
+            trainData[session_id].append(item_id)
         else:
             session_id = int(session_id)
             item_id = int(item_id)
-            trainData.setdefault(session_id, set())
-            trainData[session_id].add(item_id)
-
-    # for user, item in originData:
-    #     trainData.setdefault(user, set())
-    #     trainData[user].add(item)
+            trainData.setdefault(session_id, [])
+            trainData[session_id].append(item_id)
     return trainData
 
 
@@ -62,14 +51,25 @@ class ItemCF(object):
         self._similarity = similarity
         self._isNorm = norm
         self._itemSimMatrix = dict() # 物品相似度矩阵
+        """
+        self._itemSimMatrix
+        { itemID1: { relatedItemID1 : similarity, relatedItemID2 : similarity, ...}
+          itemID2: { relatedItemID1 : similarity, relatedItemID2 : similarity, ...}
+          ...
+        }
+        """
 
     def similarity(self):
         N = defaultdict(int) #记录每个物品的喜爱人数
         for user, items in self._trainData.items():
-            #print(user, items)
+            #每個物品的喜愛人數不算單個session中重複的
+            itemset = set(items)
+            for i in itemset:
+                N[i] += 1
+            
             for i in items:
                 self._itemSimMatrix.setdefault(i, dict())
-                N[i] += 1
+                
                 for j in items:
                     if i == j:
                         continue
@@ -81,16 +81,24 @@ class ItemCF(object):
         for i, related_items in self._itemSimMatrix.items():
             for j, cij in related_items.items():
                 self._itemSimMatrix[i][j] = cij / math.sqrt(N[i]*N[j])
+        #print(N)
         #print(self._itemSimMatrix)
-        # 是否要标准化物品相似度矩阵
-        if self._isNorm:
 
-            for i, relations in self._itemSimMatrix.items():
-                #print(i, relations)
-                if( relations != {} ):
-                    max_num = relations[max(relations, key=relations.get)]
-                # 对字典进行归一化操作之后返回新的字典
-                    self._itemSimMatrix[i] = {k : v/max_num for k, v in relations.items()}
+
+        with open('itemSimMatrix.pickle', 'wb') as f:
+            pickle.dump(self._itemSimMatrix, f)
+        # 是否要标准化物品相似度矩阵
+        """
+        標準化之後分數沒有比較高:3
+        """
+        # if self._isNorm:
+
+        #     for i, relations in self._itemSimMatrix.items():
+        #         #print(i, relations)
+        #         if( relations != {} ):
+        #             max_num = relations[max(relations, key=relations.get)]
+        #         # 对字典进行归一化操作之后返回新的字典
+        #             self._itemSimMatrix[i] = {k : v/max_num for k, v in relations.items()}
 
     def recommend(self, user, N, K):
         """
@@ -119,25 +127,27 @@ class ItemCF(object):
         self.similarity()
 
 if __name__ == "__main__":
-    train = LoadData("./test_leaderboard_sessions.csv")
-    #train, test = LoadMovieLensData("../Data/ml-1m/ratings.dat", 0.8)
-    #print("train data size: %d, test data size: %d" % (len(train), len(test)))
-    #print(train)
+    train = LoadData("../../dataset/test_leaderboard_sessions.csv")
+    candidate = CreateCandidate("../../dataset/candidate_items.csv")
+   
+    ii = 0
+    for i in train:
+        if(ii>10):
+            break
+        ii = ii+1
+        #print(train[i])
     ItemCF = ItemCF(train, similarity='iuf', norm=False)
     ItemCF.train()
 
-    # 分别对以下4个用户进行物品推荐
-    #print(ItemCF.recommend(1, 5, 80))
-    fp = open("ans0601.csv", "w")
-    fp.write("session_id,item_id,rank\n")
-    for i in ItemCF._trainData:
-        ans = ItemCF.recommend(i, 100, 2000)
-        #print(ans)
-        ii = 1
-        for j,k in ans:
-            #print(str(i)+','+str(j)+','+str(ii))
-            fp.write(str(i)+','+str(j)+','+str(ii)+'\n')
-            ii = ii+1
-    # print(ItemCF.recommend(2, 5, 80))
-    # print(ItemCF.recommend(3, 5, 80))
-    # print(ItemCF.recommend(4, 5, 80))
+    # fp = open("ans0606_2.csv", "w")
+    # fp.write("session_id,item_id,rank\n")
+    # for i in ItemCF._trainData:
+    #     ans = ItemCF.recommend(i, 1000, 2000)
+    #     #print(ans)
+    #     ii = 1
+    #     for j,k in ans:
+    #         if(ii > 100):
+    #             break
+    #         if(j in candidate):
+    #             fp.write(str(i)+','+str(j)+','+str(ii)+'\n')
+    #             ii = ii+1
