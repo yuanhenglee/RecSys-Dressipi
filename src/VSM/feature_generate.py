@@ -132,14 +132,15 @@ except:
 # construct df
 # for i, session_id in enumerate(list(session_dict.keys())[:100]):
 start = 0
-# end = 1000
-end = len(session_dict)
+end = 1000
+# end = len(session_dict)
 save_period = 10000
 
 print("Processing session", start, "to", end)
 start_time = time.time()
 
 features_lists = []
+y_lists = []
 max = 0
 for i in tqdm(range(start, end)):
     session_id = list(session_dict.keys())[i]
@@ -149,12 +150,11 @@ for i in tqdm(range(start, end)):
     # training data with purchase
     if with_purchase:
         purchase_id, purchase_date = purchase_dict[session_id]
-        for j in range(N):
-            features_list[j].append(
-                1 if purchase_id == candidate_items[j] else 0)
+        y = [ 1 if purchase_id == candidate_item else 0 for candidate_item in candidate_items ]
 
         # // only keep first 100 inner product value
         sort_list = []
+        y_sort_list = []
         num = 0
         flag = False
         for k in item_dic.keys():
@@ -163,29 +163,43 @@ for i in tqdm(range(start, end)):
             num += 1
 
             if num >= 150 and flag == False:
-                if features_list[k][3] == 1:
+                # if features_list[k][3] == 1:
+                if y[k] == 1:
                     sort_list.append(features_list[k])
+                    y_sort_list.append([y[k]])
                     break
                 else:
                     continue
 
             sort_list.append(features_list[k])
+            y_sort_list.append([y[k]])
 
-            if features_list[k][3] == 1:
+            if y[k] == 1:
+            # if features_list[k][3] == 1:
                 flag = True
 
         features_lists.extend(sort_list)
+        y_lists.extend(y_sort_list)
+
     # //
 
-        if i % save_period == 0 or i == end-1:
-            with open(output_path + '_' + str(i//save_period), 'w') as f:
+        if i % save_period == save_period-1 or i == end-1:
+            with open(output_path + '_' + 'X' + '_' + str(i//save_period), 'w') as f:
                 wr = csv.writer(f)
                 wr.writerow(
-                    ['candidate_item_id', 'inner_similarity', 'sec_diff', 'purchased'])
+                    ['candidate_item_id', 'inner_similarity', 'sec_diff'])
                 wr.writerows(features_lists)
-                del features_lists
-                gc.collect()
-                features_lists = []
+            with open(output_path + '_' + 'y' + '_' + str(i//save_period), 'w') as f:
+                wr = csv.writer(f)
+                wr.writerow(
+                    ['purchased'])
+                wr.writerows(y_lists)
+
+            del features_lists
+            del y_lists
+            gc.collect()
+            features_lists = []
+            y_lists = []
 # testing data without purchase
     else:
 
