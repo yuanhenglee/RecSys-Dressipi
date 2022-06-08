@@ -1,2 +1,5 @@
 rm -f dataset/*.pickle
-rm -f dataset/*_features/*
+rm -rf dataset/train_features
+rm -rf dataset/test_features
+mkdir dataset/train_features
+mkdir dataset/test_features
