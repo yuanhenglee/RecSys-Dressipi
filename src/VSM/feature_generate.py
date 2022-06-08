@@ -132,8 +132,8 @@ except:
 # construct df
 # for i, session_id in enumerate(list(session_dict.keys())[:100]):
 start = 0
-end = 1000
-# end = len(session_dict)
+# end = 1000
+end = len(session_dict)
 save_period = 10000
 
 print("Processing session", start, "to", end)
