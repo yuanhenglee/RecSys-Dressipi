@@ -1,7 +1,7 @@
 # generate df for training
-# format: 
-#   inner product 
-# 1 
+# format:
+#   inner product
+# 1
 # 2
 # .
 # N
@@ -21,43 +21,59 @@ gc.enable()
 
 np.set_printoptions(threshold=sys.maxsize)
 
-def cosine_similarity( v1, v2 ):
+
+def cosine_similarity(v1, v2):
     return np.dot(v1, v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))
 
-def euclidean_similarity( v1, v2 ):
+
+def euclidean_similarity(v1, v2):
     return np.linalg.norm(v1-v2)
 
-def inner_similarity( v1, v2 ):
+
+def inner_similarity(v1, v2):
     return np.dot(v1, v2)
 
-def sec2July( date1 ):
-    d1 = datetime.strptime( date1[:19], "%Y-%m-%d %H:%M:%S")    
-    d2 = datetime.strptime( "2021-07-31 12:00:00", "%Y-%m-%d %H:%M:%S")
+
+def sec2July(date1):
+    d1 = datetime.strptime(date1[:19], "%Y-%m-%d %H:%M:%S")
+    d2 = datetime.strptime("2021-07-31 12:00:00", "%Y-%m-%d %H:%M:%S")
     return (d2 - d1).total_seconds()
 
-def build_features( item_vector, sec ):
+
+def build_features(item_vector, sec):
     # for each candidate_item
     features_list = []
+
+    # item dic for recording item_id, inner product
+    item_dic = {}  # //
     for i in range(N):
         candidate_vector = vector_space[candidate_items[i]]
         features = []
-        features.append(inner_similarity( item_vector, candidate_vector ))
+        inner_product = inner_similarity(item_vector, candidate_vector)  # //
+        features.append(inner_product)  # //
         features.append(sec)
 
         features_list.append(features)
+
+        item_dic[i] = (inner_product)  # //
     # print(feature_val)
-    return features_list 
+
+    sort_dic = {k: v for k, v in sorted(
+        item_dic.items(), key=lambda item: item[1], reverse=True)}  # //
+
+    return features_list, sort_dic  # //
 
 
-def combine_items_features( item_list ):
-    vector_list = [ vector_space[item_id] for item_id, date in item_list ]
-    sec_list = [ sec2July(date) for item_id, date in item_list ]
+def combine_items_features(item_list):
+    vector_list = [vector_space[item_id] for item_id, date in item_list]
+    sec_list = [sec2July(date) for item_id, date in item_list]
 
     # simply sum up the vectors
-    combined_vector = np.sum( vector_list , axis=0 )
+    combined_vector = np.sum(vector_list, axis=0)
     # TODO weighted by order / by time diff
-    combined_sec = round(np.mean( sec_list ))
-    return build_features( combined_vector, combined_sec )
+    combined_sec = round(np.mean(sec_list))
+    return build_features(combined_vector, combined_sec)
+
 
 # args
 parser = argparse.ArgumentParser()
@@ -101,7 +117,8 @@ try:
     with open(vector_path, 'rb') as f:
         vector_space = pickle.load(f)
     with open('./dataset/candidate_items.csv') as f:
-        candidate_items = [ int(item) for item in f.read().split('\n') if item.isdigit() ]
+        candidate_items = [int(item)
+                           for item in f.read().split('\n') if item.isdigit()]
         N = len(candidate_items)
     if with_purchase:
         with open(purchase_path, 'rb') as f:
@@ -113,37 +130,63 @@ except:
 # for i, session_id in enumerate(list(session_dict.keys())[:100]):
 start = 0
 # end = 1000
-end = len(session_dict) 
+end = len(session_dict)
 save_period = 10000
 
-print( "Processing session", start , "to", end)
+print("Processing session", start, "to", end)
 start_time = time.time()
 
 features_lists = []
+max = 0
 for i in tqdm(range(start, end)):
     session_id = list(session_dict.keys())[i]
     item_list = session_dict[session_id]
-    features_list = combine_items_features( item_list )
+    features_list, item_dic = combine_items_features(item_list)  # //
 
     # training data with purchase
     if with_purchase:
         purchase_id, purchase_date = purchase_dict[session_id]
         for j in range(N):
-            features_list[j].append(1 if purchase_id == candidate_items[j] else 0)
+            features_list[j].append(
+                1 if purchase_id == candidate_items[j] else 0)
 
-        features_lists.extend(features_list)
-        if i%save_period == 0 or i == end-1:
-            with open( output_path + '_' +str(i//save_period), 'w') as f:
+        # // only keep first 100 inner product value
+        sort_list = []
+        num = 0
+        flag = False
+        for k in item_dic.keys():
+            if num >= 150 and flag == True:
+                break
+            num += 1
+
+            if num >= 150 and flag == False:
+                if features_list[k][2] == 1:
+                    sort_list.append(features_list[k])
+                    break
+                else:
+                    continue
+
+            sort_list.append(features_list[k])
+
+            if features_list[k][2] == 1:
+                flag = True
+
+        features_lists.extend(sort_list)
+    # //
+
+        if i % save_period == 0 or i == end-1:
+            with open(output_path + '_' + str(i//save_period), 'w') as f:
                 wr = csv.writer(f)
                 wr.writerows(features_lists)
                 del features_lists
                 gc.collect()
                 features_lists = []
-    # testing data without purchase
+# testing data without purchase
     else:
-       with open( output_path + '_' + str(session_id), 'w') as f:
+
+        with open(output_path + '_' + str(session_id), 'w') as f:
             wr = csv.writer(f)
             wr.writerows(features_list)
 
-
+print("max:", max)
 print("Done. Execution Time:", time.time() - start_time)
