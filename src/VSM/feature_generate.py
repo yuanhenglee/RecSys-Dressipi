@@ -180,13 +180,8 @@ for i in tqdm(range(start, end)):
         if i % save_period == 0 or i == end-1:
             with open(output_path + '_' + str(i//save_period), 'w') as f:
                 wr = csv.writer(f)
-<< << << < HEAD
                 wr.writerow(
                     ['candidate_item_id', 'inner_similarity', 'sec_diff', 'purchased'])
-== == == =
-                wr.writerow(
-                    ['candidate_item_id', 'inner_similarity', 'sec_diff', 'purchased'])
->>>>>> > 109d829b887bf36bde784e211e9a826046ef20ac
                 wr.writerows(features_lists)
                 del features_lists
                 gc.collect()
