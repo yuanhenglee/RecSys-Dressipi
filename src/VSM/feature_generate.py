@@ -17,10 +17,19 @@ import time
 from tqdm import tqdm
 import gc
 from datetime import datetime
+
 gc.enable()
 
 np.set_printoptions(threshold=sys.maxsize)
 
+# setting param
+start = 0
+end = 1000
+# end = len(session_dict)
+save_period = 10000
+n_train_sample = 150 # top 150 inner product samples
+
+feature_cols = ['candidate_item_id', 'inner_similarity', 'sec_diff']
 
 def cosine_similarity(v1, v2):
     return np.dot(v1, v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))
@@ -42,24 +51,19 @@ def sec2July(date1):
 
 def build_features(item_vector, sec):
     # for each candidate_item
-    features_list = []
+    features_list = np.zeros((N, len(feature_cols)))
 
     # item dic for recording item_id, inner product
     item_dic = {}  # //
     for i in range(N):
         candidate_vector = vector_space[candidate_items[i]]
-        features = []
-        # item_id label, for easier sampling later
-        features.append(candidate_items[i])
-
         inner_product = inner_similarity(item_vector, candidate_vector)
-        features.append(inner_product)
-        features.append(sec)
-
-        features_list.append(features)
+        # item_id label, for easier sampling later
+        features_list[i][0] = candidate_items[i]
+        features_list[i][1] = inner_product 
+        features_list[i][2] = sec
 
         item_dic[i] = (inner_product)  # //
-    # print(feature_val)
 
     sort_dic = {k: v for k, v in sorted(
         item_dic.items(), key=lambda item: item[1], reverse=True)}  # //
@@ -130,14 +134,6 @@ except:
     raise "Fail to load pickles."
 
 # construct df
-# setting param
-start = 0
-end = 1000
-# end = len(session_dict)
-save_period = 10000
-n_train_sample = 150 # top 150 inner product samples
-
-feature_cols = ['candidate_item_id', 'inner_similarity', 'sec_diff']
 
 print("Processing session", start, "to", end)
 start_time = time.time()
