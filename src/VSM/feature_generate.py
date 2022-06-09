@@ -130,11 +130,14 @@ except:
     raise "Fail to load pickles."
 
 # construct df
-# for i, session_id in enumerate(list(session_dict.keys())[:100]):
+# setting param
 start = 0
-# end = 1000
-end = len(session_dict)
+end = 1000
+# end = len(session_dict)
 save_period = 10000
+n_train_sample = 150 # top 150 inner product samples
+
+feature_cols = ['candidate_item_id', 'inner_similarity', 'sec_diff']
 
 print("Processing session", start, "to", end)
 start_time = time.time()
@@ -152,17 +155,17 @@ for i in tqdm(range(start, end)):
         purchase_id, purchase_date = purchase_dict[session_id]
         y = [ 1 if purchase_id == candidate_item else 0 for candidate_item in candidate_items ]
 
-        # // only keep first 100 inner product value
+        # only keep first 100 inner product value
         sort_list = []
         y_sort_list = []
         num = 0
         flag = False
         for k in item_dic.keys():
-            if num >= 150 and flag == True:
+            if num >= n_train_sample and flag == True:
                 break
             num += 1
 
-            if num >= 150 and flag == False:
+            if num >= n_train_sample and flag == False:
                 # if features_list[k][3] == 1:
                 if y[k] == 1:
                     sort_list.append(features_list[k])
@@ -186,8 +189,7 @@ for i in tqdm(range(start, end)):
         if i % save_period == save_period-1 or i == end-1:
             with open(output_path + '_' + 'X' + '_' + str(i//save_period), 'w') as f:
                 wr = csv.writer(f)
-                wr.writerow(
-                    ['candidate_item_id', 'inner_similarity', 'sec_diff'])
+                wr.writerow( feature_cols )
                 wr.writerows(features_lists)
             with open(output_path + '_' + 'y' + '_' + str(i//save_period), 'w') as f:
                 wr = csv.writer(f)
@@ -205,7 +207,7 @@ for i in tqdm(range(start, end)):
 
         with open(output_path + '_' + str(session_id), 'w') as f:
             wr = csv.writer(f)
-            wr.writerow(['candidate_item_id', 'inner_similarity', 'sec_diff'])
+            wr.writerow( feature_cols )
             wr.writerows(features_list)
 
 print("max:", max)
