@@ -17,16 +17,18 @@ import time
 from tqdm import tqdm
 import gc
 from datetime import datetime
+
 gc.enable()
 
 np.set_printoptions(threshold=sys.maxsize)
 
 # setting param
 start = 0
-end = 1000
-# end = len(session_dict)
+# end = 1000
+end = len(session_dict)
 save_period = 10000
 n_train_sample = 150 # top 150 inner product samples
+pickle_protocol = 5
 
 feature_cols = ['candidate_item_id', 'inner_similarity' ]
 
@@ -183,9 +185,9 @@ for i in tqdm(range(start, end)):
         if i % save_period == save_period-1 or i == end-1:
             if as_pickle:
                 with open( output_path + '_' + 'X' + '_' + str(i//save_period) + '.pickle', 'wb' ) as f:
-                    pickle.dump( features_lists, f )
+                    pickle.dump( features_lists, f, pickle_protocol )
                 with open( output_path + '_' + 'y' + '_' + str(i//save_period) + '.pickle', 'wb' ) as f:
-                    pickle.dump( y_lists, f )
+                    pickle.dump( y_lists, f, pickle_protocol )
             else:
                 with open(output_path + '_' + 'X' + '_' + str(i//save_period) + '.csv', 'w') as f:
                     wr = csv.writer(f)
@@ -206,7 +208,7 @@ for i in tqdm(range(start, end)):
     else:
         if as_pickle:
             with open( output_path + '_' + 'X' + '_' + str(session_id) + '.pickle', 'wb' ) as f:
-                pickle.dump( features_list, f )
+                pickle.dump( features_list, f , pickle_protocol)
         else:
             with open(output_path + '_' + 'X' + '_' + str(session_id) + '.csv', 'w') as f:
                 wr = csv.writer(f)
