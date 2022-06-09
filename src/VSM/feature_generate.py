@@ -144,7 +144,6 @@ start_time = time.time()
 
 features_lists = []
 y_lists = []
-max = 0
 for i in tqdm(range(start, end)):
     session_id = list(session_dict.keys())[i]
     item_list = session_dict[session_id]
@@ -188,16 +187,16 @@ for i in tqdm(range(start, end)):
 
         if i % save_period == save_period-1 or i == end-1:
             if as_pickle:
-                with open( output_path + '_' + 'X' + '_' + str(i//save_period), 'wb' ) as f:
+                with open( output_path + '_' + 'X' + '_' + str(i//save_period) + '.pickle', 'wb' ) as f:
                     pickle.dump( features_lists, f )
-                with open( output_path + '_' + 'y' + '_' + str(i//save_period), 'wb' ) as f:
+                with open( output_path + '_' + 'y' + '_' + str(i//save_period) + '.pickle', 'wb' ) as f:
                     pickle.dump( y_lists, f )
             else:
-                with open(output_path + '_' + 'X' + '_' + str(i//save_period), 'w') as f:
+                with open(output_path + '_' + 'X' + '_' + str(i//save_period) + '.csv', 'w') as f:
                     wr = csv.writer(f)
                     wr.writerow( feature_cols )
                     wr.writerows(features_lists)
-                with open(output_path + '_' + 'y' + '_' + str(i//save_period), 'w') as f:
+                with open(output_path + '_' + 'y' + '_' + str(i//save_period) + '.csv', 'w') as f:
                     wr = csv.writer(f)
                     wr.writerow(
                         ['purchased'])
@@ -211,13 +210,12 @@ for i in tqdm(range(start, end)):
 # testing data without purchase
     else:
         if as_pickle:
-            with open( output_path + '_' + 'X' + '_' + str(i//save_period), 'wb' ) as f:
+            with open( output_path + '_' + 'X' + '_' + str(session_id) + '.pickle', 'wb' ) as f:
                 pickle.dump( features_list, f )
         else:
-            with open(output_path + '_' + str(session_id), 'w') as f:
+            with open(output_path + '_' + str(session_id) + '.csv', 'w') as f:
                 wr = csv.writer(f)
                 wr.writerow( feature_cols )
                 wr.writerows(features_list)
 
-print("max:", max)
 print("Done. Execution Time:", time.time() - start_time)
