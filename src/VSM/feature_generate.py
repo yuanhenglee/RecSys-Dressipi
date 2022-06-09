@@ -101,7 +101,7 @@ parser.add_argument("--output_path",
                     default='dataset/train_features/train'
                     )
 parser.add_argument("--with_purchase", action="store_true")
-# parser.add_argument("--by_session", action="store_true")
+parser.add_argument("--as_pickle", action="store_true")
 args = parser.parse_args()
 try:
     session_path = args.session_path
@@ -109,7 +109,7 @@ try:
     vector_path = args.vector_path
     output_path = args.output_path
     with_purchase = args.with_purchase
-    # by_session = args.by_session
+    as_pickle = args.as_pickle
 except:
     raise "USAGE: python3 dump_embedding.py --feature_path ..."
 
@@ -187,15 +187,21 @@ for i in tqdm(range(start, end)):
     # //
 
         if i % save_period == save_period-1 or i == end-1:
-            with open(output_path + '_' + 'X' + '_' + str(i//save_period), 'w') as f:
-                wr = csv.writer(f)
-                wr.writerow( feature_cols )
-                wr.writerows(features_lists)
-            with open(output_path + '_' + 'y' + '_' + str(i//save_period), 'w') as f:
-                wr = csv.writer(f)
-                wr.writerow(
-                    ['purchased'])
-                wr.writerows(y_lists)
+            if as_pickle:
+                with open( output_path + '_' + 'X' + '_' + str(i//save_period), 'wb' ) as f:
+                    pickle.dump( features_lists, f )
+                with open( output_path + '_' + 'y' + '_' + str(i//save_period), 'wb' ) as f:
+                    pickle.dump( y_lists, f )
+            else:
+                with open(output_path + '_' + 'X' + '_' + str(i//save_period), 'w') as f:
+                    wr = csv.writer(f)
+                    wr.writerow( feature_cols )
+                    wr.writerows(features_lists)
+                with open(output_path + '_' + 'y' + '_' + str(i//save_period), 'w') as f:
+                    wr = csv.writer(f)
+                    wr.writerow(
+                        ['purchased'])
+                    wr.writerows(y_lists)
 
             del features_lists
             del y_lists
@@ -204,11 +210,14 @@ for i in tqdm(range(start, end)):
             y_lists = []
 # testing data without purchase
     else:
-
-        with open(output_path + '_' + str(session_id), 'w') as f:
-            wr = csv.writer(f)
-            wr.writerow( feature_cols )
-            wr.writerows(features_list)
+        if as_pickle:
+            with open( output_path + '_' + 'X' + '_' + str(i//save_period), 'wb' ) as f:
+                pickle.dump( features_list, f )
+        else:
+            with open(output_path + '_' + str(session_id), 'w') as f:
+                wr = csv.writer(f)
+                wr.writerow( feature_cols )
+                wr.writerows(features_list)
 
 print("max:", max)
 print("Done. Execution Time:", time.time() - start_time)
