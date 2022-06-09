@@ -17,7 +17,6 @@ import time
 from tqdm import tqdm
 import gc
 from datetime import datetime
-
 gc.enable()
 
 np.set_printoptions(threshold=sys.maxsize)
@@ -29,7 +28,7 @@ end = 1000
 save_period = 10000
 n_train_sample = 150 # top 150 inner product samples
 
-feature_cols = ['candidate_item_id', 'inner_similarity', 'sec_diff']
+feature_cols = ['candidate_item_id', 'inner_similarity' ]
 
 def cosine_similarity(v1, v2):
     return np.dot(v1, v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))
@@ -49,7 +48,7 @@ def sec2July(date1):
     return (d2 - d1).total_seconds()
 
 
-def build_features(item_vector, sec):
+def build_features(item_vector):
     # for each candidate_item
     features_list = np.zeros((N, len(feature_cols)))
 
@@ -61,7 +60,7 @@ def build_features(item_vector, sec):
         # item_id label, for easier sampling later
         features_list[i][0] = candidate_items[i]
         features_list[i][1] = inner_product 
-        features_list[i][2] = sec
+        # features_list[i][2] = sec
 
         item_dic[i] = (inner_product)  # //
 
@@ -73,13 +72,13 @@ def build_features(item_vector, sec):
 
 def combine_items_features(item_list):
     vector_list = [vector_space[item_id] for item_id, date in item_list]
-    sec_list = [sec2July(date) for item_id, date in item_list]
+    # sec_list = [sec2July(date) for item_id, date in item_list]
 
     # simply sum up the vectors
     combined_vector = np.mean(vector_list, axis=0)
-    # TODO weighted by order / by time diff
-    combined_sec = round(np.mean(sec_list))
-    return build_features(combined_vector, combined_sec)
+
+    # combined_sec = round(np.mean(sec_list))
+    return build_features(combined_vector)
 
 
 # args
@@ -209,7 +208,7 @@ for i in tqdm(range(start, end)):
             with open( output_path + '_' + 'X' + '_' + str(session_id) + '.pickle', 'wb' ) as f:
                 pickle.dump( features_list, f )
         else:
-            with open(output_path + '_' + str(session_id) + '.csv', 'w') as f:
+            with open(output_path + '_' + 'X' + '_' + str(session_id) + '.csv', 'w') as f:
                 wr = csv.writer(f)
                 wr.writerow( feature_cols )
                 wr.writerows(features_list)
