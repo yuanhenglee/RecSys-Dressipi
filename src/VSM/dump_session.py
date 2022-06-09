@@ -3,6 +3,7 @@
 
 import argparse
 import pickle
+from datetime import datetime
 
 def main():
     # args
@@ -31,13 +32,17 @@ def main():
         for line in f.readlines()[1:]:
             session_id = int(line.split(',')[0])
             item_id = int(line.split(',')[1])
-            date = line.split(',')[2].strip()
+            date = line.split(',')[2][:19]
             # sample only data after 2021
             if date.startswith("2021-05") or date.startswith("2021-06"):
                 if session_id in session_dict:
                     session_dict[session_id].append( (item_id, date) )
                 else:
                     session_dict[session_id] = [(item_id, date)]
+
+    # sort session history by date
+    for k, v in session_dict.items():
+        session_dict[k] = sorted(v, key=lambda x: datetime.strptime(x[1], "%Y-%m-%d %H:%M:%S"), reverse=True)
 
     # print(session_dict)
 

@@ -23,10 +23,6 @@ gc.enable()
 np.set_printoptions(threshold=sys.maxsize)
 
 # setting param
-start = 0
-# end = 1000
-end = len(session_dict)
-save_period = 10000
 n_train_sample = 150 # top 150 inner product samples
 pickle_protocol = 5
 
@@ -134,6 +130,9 @@ try:
 except:
     raise "Fail to load pickles."
 
+start = 0
+save_period = 10000
+end = len(session_dict)
 # construct df
 
 print("Processing session", start, "to", end)
