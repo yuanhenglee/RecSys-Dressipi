@@ -62,7 +62,7 @@ def build_features( item_vectors, session_id ):
     if with_purchase:
         purchase_id, _ = purchase_dict[session_id]
         selected_ids = select_top_inner( item_vectors[0], purchase_id )
-        y = np.zeros((n_train_sample, 1))
+        y = [0] * n_train_sample
     else:
         selected_ids = candidate_items
     # for each candidate_item
@@ -81,7 +81,7 @@ def build_features( item_vectors, session_id ):
         features_list[i][0] = candidate_item
 
         if with_purchase and candidate_item == purchase_id:
-            y[i][0] = 1
+            y[i] = 1
 
         features_list[i][1] = top_items_inner[0]
         features_list[i][2] = np.mean(top_items_inner)
@@ -223,10 +223,8 @@ for i in tqdm(range(start, end)):
                     wr.writerow( feature_cols )
                     wr.writerows(features_lists)
                 with open(output_path + '_' + 'y' + '_' + str(i//save_period) + '.csv', 'w') as f:
-                    wr = csv.writer(f)
-                    wr.writerow(
-                        ['purchased'])
-                    wr.writerows(y_lists)
+                    f.write('purchased\n')
+                    f.write('\n'.join(y_lists))
 
             del features_lists
             del y_lists
