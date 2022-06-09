@@ -26,10 +26,18 @@ np.set_printoptions(threshold=sys.maxsize)
 n_train_sample = 150 # top 150 inner product samples
 pickle_protocol = 5
 
-feature_cols = ['candidate_item_id', 'inner_similarity' ]
+feature_cols = [
+    'candidate_item_id',
+    'top1_inner',
+    'mean_top3_inner',
+    'max_top3_inner',
+    # 'top1_cos',
+    # 'mean_top3_cos',
+    # 'max_top3_cos'
+    ]
 
-def cosine_similarity(v1, v2):
-    return np.dot(v1, v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))
+def cosine_similarity(v1, v2, inner):
+    return inner/(np.linalg.norm(v1)*np.linalg.norm(v2))
 
 
 def euclidean_similarity(v1, v2):
@@ -46,7 +54,7 @@ def sec2July(date1):
     return (d2 - d1).total_seconds()
 
 
-def build_features(item_vector):
+def build_features( item_vectors ):
     # for each candidate_item
     features_list = np.zeros((N, len(feature_cols)))
 
@@ -54,13 +62,20 @@ def build_features(item_vector):
     item_dic = {}  # //
     for i in range(N):
         candidate_vector = vector_space[candidate_items[i]]
-        inner_product = inner_similarity(item_vector, candidate_vector)
+
+        top_items_inner = [inner_similarity(item_vector, candidate_vector) for item_vector in item_vectors]
+        top_items_cosine= [cosine_similarity(item_vectors[i], candidate_vector, top_items_inner[i]) for i in range(len(item_vectors))]
+
         # item_id label, for easier sampling later
         features_list[i][0] = candidate_items[i]
-        features_list[i][1] = inner_product 
-        # features_list[i][2] = sec
+        features_list[i][1] = top_items_inner[0]
+        features_list[i][2] = np.mean(top_items_inner)
+        features_list[i][3] = np.max(top_items_inner)
+        # features_list[i][4] = top_items_cosine[0]
+        # features_list[i][5] = np.mean(top_items_cosine)
+        # features_list[i][6] = np.max(top_items_cosine)
 
-        item_dic[i] = (inner_product)  # //
+        item_dic[i] = (top_items_inner[0])  # //
 
     sort_dic = {k: v for k, v in sorted(
         item_dic.items(), key=lambda item: item[1], reverse=True)}  # //
@@ -69,14 +84,17 @@ def build_features(item_vector):
 
 
 def combine_items_features(item_list):
-    vector_list = [vector_space[item_id] for item_id, date in item_list]
+
+    top_item_ids = [item_id for item_id, _ in item_list[:3]]
+    top_item_vectors = [vector_space[item_id] for item_id in top_item_ids]
+    # vector_list = [vector_space[item_id] for item_id, date in item_list]
     # sec_list = [sec2July(date) for item_id, date in item_list]
 
     # simply sum up the vectors
-    combined_vector = np.mean(vector_list, axis=0)
+    # combined_vector = np.mean(vector_list, axis=0)
 
     # combined_sec = round(np.mean(sec_list))
-    return build_features(combined_vector)
+    return build_features( top_item_vectors )
 
 
 # args
