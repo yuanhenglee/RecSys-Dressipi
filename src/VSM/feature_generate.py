@@ -70,7 +70,7 @@ def build_features( item_vectors, session_id ):
 
     # item dic for recording item_id, inner product
     # item_dic = {}  # //
-    for i in range(n_train_sample):
+    for i in range(len(selected_ids)):
         candidate_item = selected_ids[i]
         candidate_vector = vector_space[candidate_item]
 
@@ -131,6 +131,7 @@ parser.add_argument("--output_path",
                     )
 parser.add_argument("--with_purchase", action="store_true")
 parser.add_argument("--as_pickle", action="store_true")
+parser.add_argument("--as_csv", action="store_true")
 args = parser.parse_args()
 try:
     session_path = args.session_path
@@ -139,6 +140,7 @@ try:
     output_path = args.output_path
     with_purchase = args.with_purchase
     as_pickle = args.as_pickle
+    as_csv = args.as_csv
 except:
     raise "USAGE: python3 dump_embedding.py --feature_path ..."
 
@@ -217,14 +219,15 @@ for i in tqdm(range(start, end)):
                     pickle.dump( features_lists, f, pickle_protocol )
                 with open( output_path + '_' + 'y' + '_' + str(i//save_period) + '.pickle', 'wb' ) as f:
                     pickle.dump( y_lists, f, pickle_protocol )
-            else:
+            if as_csv:
                 with open(output_path + '_' + 'X' + '_' + str(i//save_period) + '.csv', 'w') as f:
                     wr = csv.writer(f)
                     wr.writerow( feature_cols )
                     wr.writerows(features_lists)
                 with open(output_path + '_' + 'y' + '_' + str(i//save_period) + '.csv', 'w') as f:
                     f.write('purchased\n')
-                    f.write('\n'.join(y_lists))
+                    for y_int in y_lists:
+                        f.write(str(y_int))
 
             del features_lists
             del y_lists
@@ -236,7 +239,7 @@ for i in tqdm(range(start, end)):
         if as_pickle:
             with open( output_path + '_' + 'X' + '_' + str(session_id) + '.pickle', 'wb' ) as f:
                 pickle.dump( X, f , pickle_protocol)
-        else:
+        if as_csv:
             with open(output_path + '_' + 'X' + '_' + str(session_id) + '.csv', 'w') as f:
                 wr = csv.writer(f)
                 wr.writerow( feature_cols )
