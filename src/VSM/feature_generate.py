@@ -64,7 +64,8 @@ def build_features( item_vectors, session_id ):
         selected_ids = select_top_inner( item_vectors[0], purchase_id )
         y = [0] * n_train_sample
     else:
-        selected_ids = candidate_items
+        # selected_ids = candidate_items
+        selected_ids = select_top_inner( item_vectors[0], -1)
     # for each candidate_item
     features_list = np.zeros((len(selected_ids), len(feature_cols)))
 
