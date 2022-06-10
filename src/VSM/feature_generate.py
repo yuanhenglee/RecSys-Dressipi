@@ -66,7 +66,7 @@ def build_features( item_vectors, session_id ):
     else:
         selected_ids = candidate_items
     # for each candidate_item
-    features_list = np.zeros((n_train_sample, len(feature_cols)))
+    features_list = np.zeros((len(selected_ids), len(feature_cols)))
 
     # item dic for recording item_id, inner product
     # item_dic = {}  # //
