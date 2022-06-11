@@ -11,7 +11,6 @@ import pickle
 import pandas as pd
 import numpy as np
 from numpy import zeros
-print("can't use cupy..")
 from numpy import dot
 from numpy.linalg import norm
 from numpy import argsort
@@ -32,10 +31,10 @@ feature_cols = [
     'max_top3_inner',
     'top1_cos',
     'mean_top3_cos',
-    'max_top3_cos'
-    # 'top1_itemCF'
-    # 'mean_top3_itemCF',
-    # 'max_top3_itemCF',
+    'max_top3_cos',
+    'top1_itemCF',
+    'mean_top3_itemCF',
+    'max_top3_itemCF'
     ]
 
 def cosine_similarity(v1, v2, inner):
@@ -43,6 +42,14 @@ def cosine_similarity(v1, v2, inner):
 
 def inner_similarity(v1, v2):
     return dot(v1, v2)
+
+def itemCF_similarity( item1, item2 ):
+    try:
+        return itemCF_matrix[item1][item2]
+    except KeyError:
+        return 0
+    else:
+        raise 'itemCF_sim error'
 
 def select_top_inner( item_vector, purchase_id ):
     # cal all N inner 
@@ -58,28 +65,41 @@ def select_top_inner( item_vector, purchase_id ):
     else:
         return [purchase_id] + selected_ids[1:]
 
+def select_top_itemCF( item_id, purchase_id ):
+    # cal all N inner 
+    N_itemCF = zeros(N)
+    for i in range(N):
+        N_itemCF[i] = itemCF_similarity( item_id, candidate_items[i])
 
-def build_features( item_vectors, session_id ):
-    y = None 
+    selected_ids = [ candidate_items[int(i)] for i in argsort(N_itemCF)[-1*n_train_sample:]]
+
+    if purchase_id in selected_ids or purchase_id not in candidate_items:
+        return selected_ids
+    else:
+        return [purchase_id] + selected_ids[1:]
+
+def build_features( item_ids, session_id ):
+
+    item_vectors = [vector_space[item_id] for item_id in item_ids]
+
+    y = [0] * n_train_sample
     if with_purchase:
         purchase_id, _ = purchase_dict[session_id]
-        selected_ids = select_top_inner( item_vectors[0], purchase_id )
-        y = [0] * n_train_sample
+        # selected_ids = select_top_inner( item_vectors[0], purchase_id )
+        selected_ids = select_top_itemCF( item_ids[0], purchase_id )
     else:
-        # selected_ids = candidate_items
-        selected_ids = select_top_inner( item_vectors[0], -1)
-    # for each candidate_item
+        # selected_ids = select_top_inner( item_vectors[0], -1)
+        selected_ids = select_top_itemCF( item_ids[0], -1)
+
     features_list = zeros((len(selected_ids), len(feature_cols)))
 
-    # item dic for recording item_id, inner product
-    # item_dic = {}  # //
     for i in range(len(selected_ids)):
         candidate_item = selected_ids[i]
         candidate_vector = vector_space[candidate_item]
 
         top_items_inner = [inner_similarity(item_vector, candidate_vector) for item_vector in item_vectors]
         top_items_cosine= [cosine_similarity(item_vectors[j], candidate_vector, top_items_inner[j]) for j in range(len(item_vectors))]
-        # top_items_itemCF= [inner_similarity(item_vector, candidate_vector) for item_vector in item_vectors]
+        top_items_itemCF= [itemCF_similarity(item_id, candidate_item) for item_id in item_ids]
 
         # item_id label, for easier sampling later
         features_list[i][0] = candidate_item
@@ -95,9 +115,9 @@ def build_features( item_vectors, session_id ):
         features_list[i][5] = np.mean(top_items_cosine)
         features_list[i][6] = np.max(top_items_cosine)
 
-        # features_list[i][7] = top_items_cosine[0]
-        # features_list[i][8] = np.mean(top_items_cosine)
-        # features_list[i][9] = np.max(top_items_cosine)
+        features_list[i][7] = top_items_itemCF[0]
+        features_list[i][8] = np.mean(top_items_itemCF)
+        features_list[i][9] = np.max(top_items_itemCF)
 
 
     return features_list, y
@@ -107,9 +127,8 @@ def combine_items_features( session_id ):
     item_list = session_dict[session_id]
 
     top_item_ids = [item_id for item_id, _ in item_list[:3]]
-    top_item_vectors = [vector_space[item_id] for item_id in top_item_ids]
 
-    return build_features( top_item_vectors, session_id )
+    return build_features( top_item_ids, session_id )
 
 
 # args
@@ -159,6 +178,9 @@ try:
         candidate_items = [int(item)
                            for item in f.read().split('\n') if item.isdigit()]
         N = len(candidate_items)
+    with open('./src/itemCF/itemSimMatrix.pickle', 'rb') as f:
+        itemCF_matrix = pickle.load(f)
+
     if with_purchase:
         with open(purchase_path, 'rb') as f:
             purchase_dict = pickle.load(f)
@@ -167,8 +189,8 @@ except:
 
 start = 0
 save_period = 10000
-end = 1000
-# end = len(session_dict)
+# end = 1000
+end = len(session_dict)
 # construct df
 
 print("Processing session", start, "to", end)
@@ -199,7 +221,7 @@ for i in tqdm(range(start, end)):
                 with open(output_path + '_' + 'y' + '_' + str(i//save_period) + '.csv', 'w') as f:
                     f.write('purchased\n')
                     for y_int in y_lists:
-                        f.write(str(y_int))
+                        f.write(str(y_int) + '\n')
 
             del features_lists
             del y_lists
