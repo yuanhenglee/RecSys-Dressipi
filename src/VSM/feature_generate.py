@@ -10,33 +10,16 @@ import argparse
 import pickle
 import pandas as pd
 import numpy as np
-# try:
-import cupy as cp
-import os
-try:
-    from cupy import dot
-    from cupy.linalg import norm
-    from cupy import argsort
-    # from cupy import zeros
-    use_cupy = True
-except:
-    print("can't use cupy..")
-    from numpy import dot
-    from numpy.linalg import norm
-    from numpy import argsort
-    use_cupy = False
 from numpy import zeros
-
-import sys
+print("can't use cupy..")
+from numpy import dot
+from numpy.linalg import norm
+from numpy import argsort
 import csv
 import time
 from tqdm import tqdm
 import gc
 from datetime import datetime
-
-gc.enable()
-
-# np.set_printoptions(threshold=sys.maxsize)
 
 # setting param
 n_train_sample = 500 # top 150 inner product samples
@@ -47,13 +30,16 @@ feature_cols = [
     'top1_inner',
     'mean_top3_inner',
     'max_top3_inner',
-    # 'top1_cos',
-    # 'mean_top3_cos',
-    # 'max_top3_cos'
+    'top1_cos',
+    'mean_top3_cos',
+    'max_top3_cos'
+    # 'top1_itemCF'
+    # 'mean_top3_itemCF',
+    # 'max_top3_itemCF',
     ]
 
 def cosine_similarity(v1, v2, inner):
-    return inner/(norm(v1)*norm(v2))
+    return float(inner/(norm(v1)*norm(v2)))
 
 def inner_similarity(v1, v2):
     return dot(v1, v2)
@@ -92,7 +78,8 @@ def build_features( item_vectors, session_id ):
         candidate_vector = vector_space[candidate_item]
 
         top_items_inner = [inner_similarity(item_vector, candidate_vector) for item_vector in item_vectors]
-        # top_items_cosine= [cosine_similarity(item_vectors[i], candidate_vector, top_items_inner[i]) for i in range(len(item_vectors))]
+        top_items_cosine= [cosine_similarity(item_vectors[j], candidate_vector, top_items_inner[j]) for j in range(len(item_vectors))]
+        # top_items_itemCF= [inner_similarity(item_vector, candidate_vector) for item_vector in item_vectors]
 
         # item_id label, for easier sampling later
         features_list[i][0] = candidate_item
@@ -103,14 +90,15 @@ def build_features( item_vectors, session_id ):
         features_list[i][1] = top_items_inner[0]
         features_list[i][2] = np.mean(top_items_inner)
         features_list[i][3] = np.max(top_items_inner)
-        # features_list[i][4] = top_items_cosine[0]
-        # features_list[i][5] = np.mean(top_items_cosine)
-        # features_list[i][6] = np.max(top_items_cosine)
 
-        # item_dic[i] = (top_items_inner[0])  # //
+        features_list[i][4] = top_items_cosine[0]
+        features_list[i][5] = np.mean(top_items_cosine)
+        features_list[i][6] = np.max(top_items_cosine)
 
-    # sort_dic = {k: v for k, v in sorted(
-    #     item_dic.items(), key=lambda item: item[1], reverse=True)}  # //
+        # features_list[i][7] = top_items_cosine[0]
+        # features_list[i][8] = np.mean(top_items_cosine)
+        # features_list[i][9] = np.max(top_items_cosine)
+
 
     return features_list, y
 
@@ -179,8 +167,8 @@ except:
 
 start = 0
 save_period = 10000
-# end = 1000
-end = len(session_dict)
+end = 1000
+# end = len(session_dict)
 # construct df
 
 print("Processing session", start, "to", end)
@@ -194,39 +182,6 @@ for i in tqdm(range(start, end)):
 
     # training data with purchase
     if with_purchase:
-    #     purchase_id, purchase_date = purchase_dict[session_id]
-    #     y = [ 1 if purchase_id == candidate_item else 0 for candidate_item in candidate_items ]
-
-    #     # only keep first 100 inner product value
-    #     sort_list = []
-    #     y_sort_list = []
-    #     num = 0
-    #     flag = False
-    #     for k in item_dic.keys():
-    #         if num >= n_train_sample and flag == True:
-    #             break
-    #         num += 1
-
-    #         if num >= n_train_sample and flag == False:
-    #             # if features_list[k][3] == 1:
-    #             if y[k] == 1:
-    #                 sort_list.append(features_list[k])
-    #                 y_sort_list.append([y[k]])
-    #                 break
-    #             else:
-    #                 continue
-
-    #         sort_list.append(features_list[k])
-    #         y_sort_list.append([y[k]])
-
-    #         if y[k] == 1:
-    #         # if features_list[k][3] == 1:
-    #             flag = True
-
-    #     features_lists.extend(sort_list)
-    #     y_lists.extend(y_sort_list)
-
-    # # //
         features_lists.extend(X)
         y_lists.extend(y)
 
