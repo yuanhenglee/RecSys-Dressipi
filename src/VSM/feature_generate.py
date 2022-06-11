@@ -10,7 +10,23 @@ import argparse
 import pickle
 import pandas as pd
 import numpy as np
+# try:
+import cupy as cp
 import os
+try:
+    from cupy import dot
+    from cupy.linalg import norm
+    from cupy import argsort
+    # from cupy import zeros
+    use_cupy = True
+except:
+    print("can't use cupy..")
+    from numpy import dot
+    from numpy.linalg import norm
+    from numpy import argsort
+    use_cupy = False
+from numpy import zeros
+
 import sys
 import csv
 import time
@@ -20,7 +36,7 @@ from datetime import datetime
 
 gc.enable()
 
-np.set_printoptions(threshold=sys.maxsize)
+# np.set_printoptions(threshold=sys.maxsize)
 
 # setting param
 n_train_sample = 500 # top 150 inner product samples
@@ -37,19 +53,19 @@ feature_cols = [
     ]
 
 def cosine_similarity(v1, v2, inner):
-    return inner/(np.linalg.norm(v1)*np.linalg.norm(v2))
+    return inner/(norm(v1)*norm(v2))
 
 def inner_similarity(v1, v2):
-    return np.dot(v1, v2)
+    return dot(v1, v2)
 
 def select_top_inner( item_vector, purchase_id ):
     # cal all N inner 
-    N_inner = np.zeros(N)
+    N_inner = zeros(N)
     for i in range(N):
         candidate_vector = vector_space[candidate_items[i]]
         N_inner[i] = inner_similarity(item_vector, candidate_vector)
     
-    selected_ids = [ candidate_items[i] for i in np.argsort(N_inner)[-1*n_train_sample:]]
+    selected_ids = [ candidate_items[int(i)] for i in argsort(N_inner)[-1*n_train_sample:]]
 
     if purchase_id in selected_ids or purchase_id not in candidate_items:
         return selected_ids
@@ -67,7 +83,7 @@ def build_features( item_vectors, session_id ):
         # selected_ids = candidate_items
         selected_ids = select_top_inner( item_vectors[0], -1)
     # for each candidate_item
-    features_list = np.zeros((len(selected_ids), len(feature_cols)))
+    features_list = zeros((len(selected_ids), len(feature_cols)))
 
     # item dic for recording item_id, inner product
     # item_dic = {}  # //
@@ -163,7 +179,7 @@ except:
 
 start = 0
 save_period = 10000
-# end = 5
+# end = 1000
 end = len(session_dict)
 # construct df
 
