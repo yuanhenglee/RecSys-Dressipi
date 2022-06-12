@@ -110,6 +110,7 @@ class ItemCF(object):
         recommends = dict()
         # 先获取user的喜爱物品列表
         items = self._trainData[user]
+        point = 1
         # for i in self._trainData:
         #     print(self._trainData[i])
         for item in items:
@@ -118,7 +119,8 @@ class ItemCF(object):
                 if i in items:
                     continue  # 如果与user喜爱的物品重复了，则直接跳过
                 recommends.setdefault(i, 0.)
-                recommends[i] += sim
+                recommends[i] += sim * point
+            point += 1.5
         # 根据被推荐物品的相似度逆序排列，然后推荐前N个物品给到用户
         #return dict(sorted(recommends.items(), key=itemgetter(1), reverse=True)[:N])
         return sorted(recommends.items(), key=itemgetter(1), reverse=True)[:N]
@@ -127,14 +129,15 @@ class ItemCF(object):
         self.similarity()
 
 if __name__ == "__main__":
-    train = LoadData("../../dataset/test_leaderboard_sessions.csv")
+    train = LoadData("./train_sessions_cutted.csv")
+    #leaderboard = LoadData("../../dataset/test_leaderboard_sessions.csv")
     candidate = CreateCandidate("../../dataset/candidate_items.csv")
    
-    ii = 0
-    for i in train:
-        if(ii>10):
-            break
-        ii = ii+1
+    # ii = 0
+    # for i in train:
+    #     if(ii>10):
+    #         break
+    #     ii = ii+1
         #print(train[i])
     ItemCF = ItemCF(train, similarity='iuf', norm=False)
     ItemCF.train()
