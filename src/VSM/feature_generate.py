@@ -21,7 +21,7 @@ import gc
 from datetime import datetime
 
 # setting param
-n_train_sample = 500 # top 150 inner product samples
+n_train_sample = 1000 # top 150 inner product samples
 pickle_protocol = 5
 
 feature_cols = [
