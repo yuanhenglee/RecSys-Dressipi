@@ -3,7 +3,17 @@
 
 import argparse
 import pickle
-from datetime import datetime
+import datetime
+import time
+
+def is_date_selected( date_str ):
+    date = datetime.datetime.strptime( date_str, "%Y-%m-%d %H:%M:%S")
+    date_start = datetime.datetime(2021, 1, 1)
+
+    if date > date_start:
+        return True
+    else:
+        return False
 
 def main():
     # args
@@ -34,7 +44,7 @@ def main():
             item_id = int(line.split(',')[1])
             date = line.split(',')[2][:19]
             # sample only data after 2021
-            if date.startswith("2021-05") or date.startswith("2021-06"):
+            if is_date_selected(date): 
                 if session_id in session_dict:
                     session_dict[session_id].append( (item_id, date) )
                 else:
@@ -42,12 +52,15 @@ def main():
 
     # sort session history by date
     for k, v in session_dict.items():
-        session_dict[k] = sorted(v, key=lambda x: datetime.strptime(x[1], "%Y-%m-%d %H:%M:%S"), reverse=True)
+        session_dict[k] = sorted(v, key=lambda x: datetime.datetime.strptime(x[1], "%Y-%m-%d %H:%M:%S"), reverse=True)[:3]
 
-    # print(session_dict)
+    # print(list(session_dict.values())[:10])
 
     with open(output_path, 'wb') as f:
         pickle.dump(session_dict, f)
  #
 if __name__ == "__main__":
+    print("Building session dict...")
+    start_time = time.time()
     main()
+    print("Done. Execution Time:", time.time() - start_time)
