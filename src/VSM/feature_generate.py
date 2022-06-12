@@ -35,7 +35,10 @@ feature_cols = [
     'top1_itemCF',
     'mean_top3_itemCF',
     'max_top3_itemCF'
+    'agg1.5_itemCF'
     ]
+
+itemCF_weight = np.arange(1, 31, 1.5)
 
 def cosine_similarity(v1, v2, inner):
     return float(inner/(norm(v1)*norm(v2)))
@@ -48,8 +51,6 @@ def itemCF_similarity( item1, item2 ):
         return itemCF_matrix[item1][item2]
     except KeyError:
         return 0
-    else:
-        raise 'itemCF_sim error'
 
 def select_top_inner( item_vector, purchase_id ):
     # cal all N inner 
@@ -97,8 +98,8 @@ def build_features( item_ids, session_id ):
         candidate_item = selected_ids[i]
         candidate_vector = vector_space[candidate_item]
 
-        top_items_inner = [inner_similarity(item_vector, candidate_vector) for item_vector in item_vectors]
-        top_items_cosine= [cosine_similarity(item_vectors[j], candidate_vector, top_items_inner[j]) for j in range(len(item_vectors))]
+        top_items_inner = [inner_similarity(item_vector, candidate_vector) for item_vector in item_vectors[:3]]
+        top_items_cosine= [cosine_similarity(item_vectors[j], candidate_vector, top_items_inner[j]) for j in range(len(item_vectors[:3]))]
         top_items_itemCF= [itemCF_similarity(item_id, candidate_item) for item_id in item_ids]
 
         # item_id label, for easier sampling later
@@ -116,8 +117,10 @@ def build_features( item_ids, session_id ):
         features_list[i][6] = np.max(top_items_cosine)
 
         features_list[i][7] = top_items_itemCF[0]
-        features_list[i][8] = np.mean(top_items_itemCF)
-        features_list[i][9] = np.max(top_items_itemCF)
+        features_list[i][8] = np.mean(top_items_itemCF[:3])
+        features_list[i][9] = np.max(top_items_itemCF[:3])
+
+        features_list[i][10] = np.sum(itemCF_weight * top_items_itemCF[::-1])
 
 
     return features_list, y
@@ -126,7 +129,7 @@ def build_features( item_ids, session_id ):
 def combine_items_features( session_id ):
     item_list = session_dict[session_id]
 
-    top_item_ids = [item_id for item_id, _ in item_list[:3]]
+    top_item_ids = [item_id for item_id, _ in item_list]
 
     return build_features( top_item_ids, session_id )
 
