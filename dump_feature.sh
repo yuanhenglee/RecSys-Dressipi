@@ -6,5 +6,5 @@ python3 ./src/VSM/dump_purchase.py
 python3 ./src/VSM/dump_session.py
 python3 src/VSM/dump_session.py --session_path dataset/test_leaderboard_sessions.csv --output_path dataset/test_sessions.pickle
 python3 ./src/VSM/dump_embedding.py
-python3 src/VSM/feature_generate.py --with_purchase --as_pickle
-python3 src/VSM/feature_generate.py --session_path dataset/test_sessions.pickle --output_path dataset/test_features/test --as_pickle
+python3 src/VSM/feature_generate.py --with_purchase --as_pickle --as_csv
+python3 src/VSM/feature_generate.py --session_path dataset/test_sessions.pickle --output_path dataset/test_features/test --as_pickle --as_csv
