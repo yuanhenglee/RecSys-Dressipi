@@ -52,7 +52,7 @@ def main():
 
     # sort session history by date
     for k, v in session_dict.items():
-        session_dict[k] = sorted(v, key=lambda x: datetime.datetime.strptime(x[1], "%Y-%m-%d %H:%M:%S"), reverse=True)[:3]
+        session_dict[k] = sorted(v, key=lambda x: datetime.datetime.strptime(x[1], "%Y-%m-%d %H:%M:%S"), reverse=True)[:10]
 
     # print(list(session_dict.values())[:10])
 
