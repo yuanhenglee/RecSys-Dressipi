@@ -31,15 +31,15 @@
 * The input sessions for prediction for determining the final winners.
 
 ## clustering_allltems_file.csv
-* columns: catogoryTotalCount, catogory, catogoryMemberItem
+* columns: categoryTotalCount,category,categoryMemberItem
 
-* All catogories with its items.
+* All categories with its items.
 * clustering by categoryID
 
 ## clustering_candidate_file.csv
-* columns: catogoryTotalCount, catogory, catogoryMemberItem
+* columns: categoryTotalCount,category,categoryMemberItem
 
-* All catogories with its candidate items.
+* All categories with its candidate items.
 * clustering by categoryID
 
 ## sessionClustering.csv
