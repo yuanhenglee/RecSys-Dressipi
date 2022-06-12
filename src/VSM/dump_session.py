@@ -8,7 +8,7 @@ import time
 
 def is_date_selected( date_str ):
     date = datetime.datetime.strptime( date_str, "%Y-%m-%d %H:%M:%S")
-    date_start = datetime.datetime(2021, 1, 1)
+    date_start = datetime.datetime(2021, 5, 1)
 
     if date > date_start:
         return True
