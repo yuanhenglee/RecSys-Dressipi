@@ -34,8 +34,14 @@ feature_cols = [
     'max_top3_cos',
     'top1_itemCF',
     'mean_top3_itemCF',
-    'max_top3_itemCF'
-    'agg1.5_itemCF'
+    'max_top3_itemCF',
+    'agg1.5_itemCF',
+    'top1_popularity_last_summer',
+    'top1_popularity_cur_summer',
+    'top1_popularity_cur_spring',
+    'can_popularity_last_summer',
+    'can_popularity_cur_summer',
+    'can_popularity_cur_spring',
     ]
 
 itemCF_weight = np.arange(1, 31, 1.5)
@@ -122,6 +128,7 @@ def build_features( item_ids, session_id ):
 
         features_list[i][10] = np.sum(itemCF_weight * top_items_itemCF[::-1])
 
+        # features_list[i][11] = 
 
     return features_list, y
 
@@ -183,6 +190,8 @@ try:
         N = len(candidate_items)
     with open('./src/itemCF/itemSimMatrix.pickle', 'rb') as f:
         itemCF_matrix = pickle.load(f)
+
+    popularity_df = read_csv('./src/VSM/popular_train.csv')
 
     if with_purchase:
         with open(purchase_path, 'rb') as f:
