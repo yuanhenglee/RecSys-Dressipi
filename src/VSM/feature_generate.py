@@ -36,12 +36,12 @@ feature_cols = [
     'mean_top3_itemCF',
     'max_top3_itemCF',
     'agg1.5_itemCF',
-    'top1_popularity_last_summer',
     'top1_popularity_cur_summer',
     'top1_popularity_cur_spring',
-    'can_popularity_last_summer',
+    'top1_popularity_last_summer',
     'can_popularity_cur_summer',
     'can_popularity_cur_spring',
+    'can_popularity_last_summer',
     ]
 
 itemCF_weight = np.arange(1, 31, 1.5)
@@ -126,9 +126,15 @@ def build_features( item_ids, session_id ):
         features_list[i][8] = np.mean(top_items_itemCF[:3])
         features_list[i][9] = np.max(top_items_itemCF[:3])
 
-        features_list[i][10] = np.sum(itemCF_weight * top_items_itemCF[::-1])
+        features_list[i][10] = np.sum(itemCF_weight[:len(item_ids)] * top_items_itemCF[::-1])
 
-        # features_list[i][11] = 
+        features_list[i][11] = popularity_cur_summer[item_ids[0]]
+        features_list[i][12] = popularity_cur_spring[item_ids[0]]
+        features_list[i][13] = popularity_last_summer[item_ids[0]]
+
+        features_list[i][14] = popularity_cur_summer[candidate_item]
+        features_list[i][15] = popularity_cur_spring[candidate_item]
+        features_list[i][16] = popularity_last_summer[candidate_item]
 
     return features_list, y
 
@@ -191,18 +197,22 @@ try:
     with open('./src/itemCF/itemSimMatrix.pickle', 'rb') as f:
         itemCF_matrix = pickle.load(f)
 
-    popularity_df = read_csv('./src/VSM/popular_train.csv')
+    popularity_df = pd.read_csv('./src/VSM/popular_train.csv', index_col = 'itemId')
+    popularity_cur_summer = popularity_df[['2021-05', '2021-06']].sum(axis =1).copy()
+    popularity_cur_spring = popularity_df[['2021-02', '2021-03', '2021-04']].sum(axis =1).copy()
+    popularity_last_summer = popularity_df[['2020-05', '2020-06', '2020-07']].sum(axis =1).copy()
+    del popularity_df
 
     if with_purchase:
         with open(purchase_path, 'rb') as f:
             purchase_dict = pickle.load(f)
 except:
-    raise "Fail to load pickles."
+    raise "Fail to load files."
 
 start = 0
 save_period = 10000
-# end = 1000
-end = len(session_dict)
+end = 1000
+# end = len(session_dict)
 # construct df
 
 print("Processing session", start, "to", end)
