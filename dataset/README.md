@@ -31,15 +31,21 @@
 * The input sessions for prediction for determining the final winners.
 
 ## clustering_allltems_file.csv
-* columns: catogoryTotalCount, catogory, catogoryMemberItem
+* columns: categoryTotalCount,category,categoryMemberItem
 
-* All catogories with its items.
+* All categories with its items.
+* clustering by categoryID
 
 ## clustering_candidate_file.csv
-* columns: catogoryTotalCount, catogory, catogoryMemberItem
+* columns: categoryTotalCount,category,categoryMemberItem
 
-* All catogories with its candidate items.
+* All categories with its candidate items.
+* clustering by categoryID
 
+## sessionClustering.csv
+* columns: size, sessionID, itemID
+
+* clustering by sessionID
 ***
 ## splitTrainSessions.py
 It can split train_sessions.csv according to your specific time, and generate the data you want.
@@ -57,3 +63,5 @@ Data will be stored in dataset/2021-03.csv.
 python3 splitTrainSessions.py -y 2020
 ```
 Data will be stored in dataset/2020.csv.
+
+## clustering.cpp

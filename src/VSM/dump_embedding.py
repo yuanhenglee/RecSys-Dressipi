@@ -34,10 +34,7 @@ def main():
                 item_docs[item_id] = f.read()
     
     # construct vector space
-    start_time = time.time()
-    print("Building VectorSpace...")
     vectorSpace = VectorSpace( item_docs )
-    print("Done. Execution Time:", time.time() - start_time)
 
     result = vectorSpace.documentVectorsTFIDF
 
@@ -47,4 +44,7 @@ def main():
         pickle.dump(result, f)
 
 if __name__ == "__main__":
+    print("Building embedding vector space...")
+    start_time = time.time()
     main()
+    print("Done. Execution Time:", time.time() - start_time)

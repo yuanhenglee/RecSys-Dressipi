@@ -3,6 +3,7 @@
 
 import argparse
 import pickle
+import time
 
 def main():
     # args
@@ -44,4 +45,7 @@ def main():
         pickle.dump(purchase_dict, f)
  #
 if __name__ == "__main__":
+    print("Building purchase dict...")
+    start_time = time.time()
     main()
+    print("Done. Execution Time:", time.time() - start_time)

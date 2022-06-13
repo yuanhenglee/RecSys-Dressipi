@@ -5,3 +5,4 @@ __pycache__
 *.pickle
 dataset/train_features/*
 dataset/test_features/*
+src/itemCF/*.csv
