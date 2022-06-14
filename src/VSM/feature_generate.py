@@ -197,7 +197,7 @@ try:
     with open('./src/itemCF/itemSimMatrix.pickle', 'rb') as f:
         itemCF_matrix = pickle.load(f)
 
-    popularity_df = pd.read_csv('./src/VSM/popular_train.csv', index_col = 'itemId')
+    popularity_df = pd.read_csv('./src/VSM/popular_train_can.csv', index_col = 'item_id')
     popularity_cur_summer = popularity_df[['2021-05', '2021-06']].sum(axis =1).copy()
     popularity_cur_spring = popularity_df[['2021-02', '2021-03', '2021-04']].sum(axis =1).copy()
     popularity_last_summer = popularity_df[['2020-05', '2020-06', '2020-07']].sum(axis =1).copy()
@@ -211,8 +211,8 @@ except:
 
 start = 0
 save_period = 10000
-end = 1000
-# end = len(session_dict)
+# end = 1000
+end = len(session_dict)
 # construct df
 
 print("Processing session", start, "to", end)
