@@ -6,11 +6,14 @@ import pickle
 import datetime
 import time
 
+d_l_start = datetime.datetime(2020, 6, 1)
+d_l_end = datetime.datetime(2020, 7, 1)
+d_c_start = datetime.datetime(2021, 5, 1)
 def is_date_selected( date_str ):
     date = datetime.datetime.strptime( date_str, "%Y-%m-%d %H:%M:%S")
-    date_start = datetime.datetime(2021, 5, 1)
 
-    if date > date_start:
+    # if d_l_start < date < d_l_end or d_c_start < date:
+    if d_c_start < date:
         return True
     else:
         return False

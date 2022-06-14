@@ -111,8 +111,11 @@ def build_features( item_ids, session_id ):
         # item_id label, for easier sampling later
         features_list[i][0] = candidate_item
 
-        if with_purchase and candidate_item == purchase_id:
-            y[i] = 1
+        if with_purchase:
+            if candidate_item == purchase_id:
+                y[i] = 1
+            elif purchase_id in item_ids:
+                y[i] = 0.2
 
         features_list[i][1] = top_items_inner[0]
         features_list[i][2] = np.mean(top_items_inner)
